@@ -1,4 +1,4 @@
-if [[ `basename $PWD` != "MCProd" ]]; then echo "Execute from MCProd dir"; exit; fi
+if [[ `basename $PWD` != "aQGC" ]]; then echo "Execute from aQGC dir"; exit; fi
 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${PWD}/lib
 export prodBase=$PWD
@@ -16,6 +16,5 @@ else
     which root >> /dev/null
     if [[ $? -ne 0 ]]; then
 	echo "Please ensure ROOT is available and retry"
-	exit
     fi
 fi
