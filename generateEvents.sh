@@ -10,7 +10,7 @@ else
     if [[ $# -gt 1 ]]; then
 	delphesCard=$2
     else
-	delphesCard="cards/gen_card.tcl"
+	delphesCard="$delphesDir/cards/gen_card.tcl"
     fi
 fi
 
@@ -23,18 +23,15 @@ touch $aQGCWorkDir/.dummy
 
 python $madgraphDir/bin/mg5_aMC < "${mgScript}"
 
-gzs=`find . -newer $aQGCWorkDir/.dummy -name "unweighted_events.lhe.gz" -exec echo $PWD/{} \;`
+gzs=`find . -newer $aQGCWorkDir/.dummy -name "unweighted_events.lhe.gz" -exec echo {} \;`
 echo $gzs
-
-cd ..
 
 #------------------------------------------------------------------------
 
-#cd $delphesDir
 for gz in $gzs; do 
     lhe=${gz%%.gz}
     output=${lhe%%.lhe}.root  #set delphes output path/name
-
+    
     gunzip $gz
     n=`grep -c \<event\> $lhe`
     echo $n
