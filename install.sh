@@ -25,7 +25,7 @@ if [[ $? -ne 0 ]]; then
     echo "ERROR getting madgraph"
     exit
 else
-    export madgraphDir=$aQGCWorkDir/MG5_aMC_v3.1.1
+    export madgraphDir=$aQGCWorkDir/MG5_aMC_v3_1_1
     rm MG5_aMC_v3.1.1.tar.gz
 fi
 

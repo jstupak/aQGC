@@ -1,6 +1,5 @@
 #!/bin/bash -x
 
-if [[ `basename $PWD` != "MCProd" ]]; then echo "Execute from MCProd dir"; exit; fi
 if [[ $# < 1 ]]; 
 then 
     echo "Usage: ./generateEvents.sh <mg script> [delphes card]"
@@ -17,20 +16,20 @@ fi
 
 source setup.sh
 
-touch dummy
+touch $aQGCWorkDir/.dummy
 
 #########################################################################
 
-cd MG5_aMC_v3_1_1
-python ./bin/mg5_aMC < "${mgScript}"
-gzs=`find . -newer ../dummy -name "unweighted_events.lhe.gz" -exec echo $PWD/{} \;`
+python $madgraphDir/bin/mg5_aMC < "${mgScript}"
+
+gzs=`find . -newer $aQGCWorkDir/.dummy -name "unweighted_events.lhe.gz" -exec echo $PWD/{} \;`
 echo $gzs
 
 cd ..
 
 #------------------------------------------------------------------------
 
-cd delphes
+cd $delphesDir
 for gz in $gzs; do 
     lhe=${gz%%.gz}
     output=${lhe%%.lhe}.root  #set delphes output path/name
