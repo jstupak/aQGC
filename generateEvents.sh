@@ -14,7 +14,8 @@ else
     fi
 fi
 
-source setup.sh
+#source setup.sh
+. ~/.aQGCEnv
 
 touch $aQGCWorkDir/.dummy
 
@@ -29,7 +30,7 @@ cd ..
 
 #------------------------------------------------------------------------
 
-cd $delphesDir
+#cd $delphesDir
 for gz in $gzs; do 
     lhe=${gz%%.gz}
     output=${lhe%%.lhe}.root  #set delphes output path/name
@@ -37,7 +38,7 @@ for gz in $gzs; do
     gunzip $gz
     n=`grep -c \<event\> $lhe`
     echo $n
-    sed s%examples/Pythia8/events.lhe%$lhe% examples/Pythia8/configLHE.cmnd > configLHE.cmnd #this will create a new config pointing to your lhe
+    sed s%examples/Pythia8/events.lhe%$lhe% $delphesDir/examples/Pythia8/configLHE.cmnd > configLHE.cmnd #this will create a new config pointing to your lhe
     sed "s%Main:numberOfEvents = 10%Main:numberOfEvents = $n%" --in-place configLHE.cmnd
-    ./DelphesPythia8 $delphesCard configLHE.cmnd $output  #this runs delphes using your new config
+    $delphesDir/DelphesPythia8 $delphesCard configLHE.cmnd $output  #this runs delphes using your new config
 done

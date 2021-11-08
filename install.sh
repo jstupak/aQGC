@@ -56,6 +56,8 @@ if [[ $? -ne 0 ]]; then
     echo "ERROR compiling delphes"
     exit
 else
+    export delphesDir=$aQGCWorkDir/delphes
     cd ..
-    export -p > ~/.prodEnv
 fi
+
+export -p > ~/.aQGCEnv
