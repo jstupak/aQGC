@@ -41,7 +41,7 @@ if [[ $? -ne 0 ]]; then
     echo "ERROR compiling pythia"
     exit
 else
-    export pythiaDir=$aQGCWorkDir/pythia830g
+    export pythiaDir=$aQGCWorkDir/pythia8306
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${aQGCWorkDir}/lib
     export PYTHIA8=$aQGCWorkDir
     rm pythia8306.tgz
