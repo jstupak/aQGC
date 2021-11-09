@@ -87,7 +87,7 @@ if __name__=='__main__':
         tag=str(argv[2])
     else:
         tag=''
-    outputName=(bool(tag)*(tag+'_'))+inputName.replace('.root','.hist.root')
+    outputName=inputName.replace('.root',(bool(tag)*('.%s'%tag))+'.hist.root')
 
     print "inputName:",inputName
     print "tag:",tag
@@ -185,6 +185,41 @@ if __name__=='__main__':
         h_truth[23]['mult'].Fill(len(truthZs))
         h_truth[22]['mult'].Fill(len(truthPhotons))
         T_beamRemnants_multiplicity.Fill(len(beamRemnantMuons))
+
+        for i in range(len(truthElectrons)):
+            h_truth[11]['pT'].Fill(truthElectrons[i].PT)
+            h_truth[11]['p'].Fill(truthElectrons[i].P4().P())
+            h_truth[11]['eta'].Fill(truthElectrons[i].Eta)
+
+        for i in range(len(truthMuons)):
+            h_truth[11]['pT'].Fill(truthMuons[i].PT)
+            h_truth[11]['p'].Fill(truthMuons[i].P4().P())
+            h_truth[11]['eta'].Fill(truthMuons[i].Eta)
+
+        for i in range(len(truthWs)):
+            h_truth[11]['pT'].Fill(truthWs[i].PT)
+            h_truth[11]['p'].Fill(truthWs[i].P4().P())
+            h_truth[11]['eta'].Fill(truthWs[i].Eta)
+
+        for i in range(len(truthZs)):
+            h_truth[11]['pT'].Fill(truthZs[i].PT)
+            h_truth[11]['p'].Fill(truthZs[i].P4().P())
+            h_truth[11]['eta'].Fill(truthZs[i].Eta)
+
+        for i in range(len(truthPhotons)):
+            h_truth[11]['pT'].Fill(truthPhotons[i].PT)
+            h_truth[11]['p'].Fill(truthPhotons[i].P4().P())
+            h_truth[11]['eta'].Fill(truthPhotons[i].Eta)
+
+        for i in range(len(truthNeutrinos)):
+            h_truth[11]['pT'].Fill(truthNeutrinos[i].PT)
+            h_truth[11]['p'].Fill(truthNeutrinos[i].P4().P())
+            h_truth[11]['eta'].Fill(truthNeutrinos[i].Eta)
+
+        for i in range(len(beamRemnantMuons)):
+            T_beamRemnants_pT.Fill(beamRemnantMuons[i].PT)
+            T_beamRemnants_p.Fill(beamRemnantMuons[i].P4().P())
+            T_beamRemnants_eta.Fill(beamRemnantMuons[i].Eta)
 
         truthMissingP=TLorentzVector()
         for nu in truthNeutrinos:
