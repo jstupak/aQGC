@@ -57,7 +57,7 @@ if [[ $? -ne 0 ]]; then
     exit
 else
     export delphesDir=$aQGCWorkDir/delphes
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${delphes}
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${delphesDir}
     cd ..
 fi
 
