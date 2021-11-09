@@ -29,8 +29,11 @@ etaMax={11:2.5,
 #---------------------------------------------------------
 #EVENT SELECTION
 
+#ADD EVENT SELECTION CRITERIA HERE
+
 #---------------------------------------------------------
 import pdb
+import operator
 from sys import argv
 #---------------------------------------------------------
 from ROOT import *
@@ -62,11 +65,11 @@ def getParents(p):
     result=[p]
 
     motherIndices=[]
-    if p.M1!=-1 and tree.Particle[p.M1].PID==p.PID:
+    if p.M1!=-1 and event.Particle[p.M1].PID==p.PID:
         motherIndices.append(p.M1)
-    if p.M2!=-1 and tree.Particle[p.M2].PID==p.PID:
+    if p.M2!=-1 and event.Particle[p.M2].PID==p.PID:
         motherIndices.append(p.M2)
-    result+=[getParents(tree.Particle[i]) for i in motherIndices]
+    result+=[getParents(event.Particle[i]) for i in motherIndices]
 
     return result
 
@@ -90,11 +93,15 @@ if __name__=='__main__':
     print "tag:",tag
     
     f=TFile(inputName)
-    tree=f.Get("Delphes")
+    t=f.Delphes
     output=TFile(outputName,"RECREATE")
 
+    t.GetEntry(0)
+    sqrtS=0
+    sqrtS+=t.Particle[0].E
+    sqrtS+=t.Particle[1].E
     #sets upper limit for bin range
-    bin_range = 15000
+    bin_range = sqrtS/10
 
     #declares truth-level pT, p, eta, and multiplicity histograms for e,mu,W,Z,gamma
     h_truth={}
@@ -156,28 +163,27 @@ if __name__=='__main__':
 
     #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
     
-    for event in range(min(tree.GetEntries(),maxEvents)):
-        tree.GetEntry(event)
+    for event in f.Delphes:
 
         #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         #truth level
         #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-        truthElectrons=selector(tree.Particle,'x.Status==1 and abs(x.PID)==11')
-        truthMuons    =selector(tree.Particle,'x.Status==1 and abs(x.PID)==13')
-        truthWs       =selector(tree.Particle,'x.Status==22 and abs(x.PID)==24')
-        truthZs       =selector(tree.Particle,'x.Status==22 and abs(x.PID)==23')
-        truthPhotons  =selector(tree.Particle,'x.Status==1 and abs(x.PID)==22')
-        truthNeutrinos=selector(tree.Particle,'x.Status==1 and (abs(x.PID)==12 or abs(x.PID)==14 or abs(x.PID)==16)')
+        truthElectrons=selector(event.Particle,'x.Status==1 and abs(x.PID)==11')
+        truthMuons    =selector(event.Particle,'x.Status==1 and abs(x.PID)==13')
+        truthWs       =selector(event.Particle,'x.Status==22 and abs(x.PID)==24')
+        truthZs       =selector(event.Particle,'x.Status==22 and abs(x.PID)==23')
+        truthPhotons  =selector(event.Particle,'x.Status==1 and abs(x.PID)==22')
+        truthNeutrinos=selector(event.Particle,'x.Status==1 and (abs(x.PID)==12 or abs(x.PID)==14 or abs(x.PID)==16)')
 
         beamRemnantMuons   =selector(truthMuons,'isBeamRemnant(x)')
         nonBeamRemnantMuons=selector(truthMuons,'not isBeamRemnant(x)')
-                         
-        T_e_multiplicity.Fill(len(truthElectrons))
-        T_mu_multiplicity.Fill(len(truthMuons))
-        T_W_multiplicity.Fill(len(truthWs))
-        T_z_multiplicity.Fill(len(truthZs))
-        T_gamma_multiplicity.Fill(len(truthPhotons))
+
+        h_truth[11]['mult'].Fill(len(truthElectrons))
+        h_truth[13]['mult'].Fill(len(truthMuons))
+        h_truth[24]['mult'].Fill(len(truthWs))
+        h_truth[23]['mult'].Fill(len(truthZs))
+        h_truth[22]['mult'].Fill(len(truthPhotons))
         T_beamRemnants_multiplicity.Fill(len(beamRemnantMuons))
 
         truthMissingP=TLorentzVector()
@@ -191,26 +197,26 @@ if __name__=='__main__':
         #reco level
         #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-        R_missingET.Fill(tree.MissingET[0].MET)
-        R_missingE.Fill(tree.MissingET[0].P4().P())
+        R_missingET.Fill(event.MissingET[0].MET)
+        R_missingE.Fill(event.MissingET[0].P4().P())
 
         #final and initial-state 4-vectors
         P4_i=TLorentzVector()
-        P4_i+=Particle[0].P4()
-        P4_i+=Particle[1].P4()
+        P4_i+=event.Particle[0].P4()
+        P4_i+=event.Particle[1].P4()
         
         P4_f = TLorentzVector()
 
-        electrons=selector(tree.Electron,                 'x.PT>%f and abs(x.Eta)<%f'%(pTMin[11],etaMax[11]))
-        muons    =selector(tree.Muon,                     'x.PT>%f and abs(x.Eta)<%f'%(pTMin[13],etaMax[13]))
-        photons  =selector(tree.Photon,                   'x.PT>%f and abs(x.Eta)<%f'%(pTMin[22],etaMax[22]))
-        jets     =selector(tree.__getattribute__(jetType),'x.PT>%f and abs(x.Eta)<%f'%(pTMin[21],etaMax[21]))
-        
-        #electrons=selector(tree.Electron,'x.PT>5 and abs(x.Eta)<2')
-        #muons=selector(tree.Muon,'x.PT>5 and abs(x.Eta)<2')
+        electrons=selector(event.Electron,                 'x.PT>%f and abs(x.Eta)<%f'%(pTMin[11],etaMax[11]))
+        muons    =selector(event.Muon,                     'x.PT>%f and abs(x.Eta)<%f'%(pTMin[13],etaMax[13]))
+        photons  =selector(event.Photon,                   'x.PT>%f and abs(x.Eta)<%f'%(pTMin[22],etaMax[22]))
+        jets     =selector(event.__getattr__(jetType),     'x.PT>%f and abs(x.Eta)<%f'%(pTMin[21],etaMax[21]))
 
-        #fMuons=selector(tree.Muon,'abs(x.Eta)>2')
-        #fMuons+=selector(tree.Electron,'abs(x.Eta)>2 and x.Particle.GetObject().PID==11 and x.Particle.GetObject().Status==1 and x.Particle.GetObject().M1<5')  #this is a hack - not a typo
+        #electrons=selector(event.Electron,'x.PT>5 and abs(x.Eta)<2')
+        #muons=selector(event.Muon,'x.PT>5 and abs(x.Eta)<2')
+
+        #fMuons=selector(event.Muon,'abs(x.Eta)>2')
+        #fMuons+=selector(event.Electron,'abs(x.Eta)>2 and x.Particle.GetObject().PID==11 and x.Particle.GetObject().Status==1 and x.Particle.GetObject().M1<5')  #this is a hack - not a typo
        
         #sort object lists
         for collection in [electrons, muons, photons, jets]: collection.sort(key=operator.attrgetter('PT'),reverse=True)
@@ -219,45 +225,45 @@ if __name__=='__main__':
         for i in range(len(electrons)):
             P4_f+=electrons[i].P4()
             h_reco[11]['pT']['I'].Fill(electrons[i].PT)
-            h_reco[11]['p']['I'].Fill(electrons[i].P)
+            h_reco[11]['p']['I'].Fill(electrons[i].P4().P())
             h_reco[11]['eta']['I'].Fill(electrons[i].Eta)
 
             if i<4:
                 h_reco[11]['pT'][i].Fill(electrons[i].PT)
-                h_reco[11]['p'][i].Fill(electrons[i].P)
+                h_reco[11]['p'][i].Fill(electrons[i].P4().P())
                 h_reco[11]['eta'][i].Fill(electrons[i].Eta)
 
         h_reco[13]['mult'].Fill(len(muons))
         for i in range(len(muons)):
             P4_f+=muons[i].P4()
             h_reco[13]['pT']['I'].Fill(muons[i].PT)
-            h_reco[13]['p']['I'].Fill(muons[i].PT)
-            h_reco[13]['eta']['I'].Fill(muons[i].PT)            
+            h_reco[13]['p']['I'].Fill(muons[i].P4().P())
+            h_reco[13]['eta']['I'].Fill(muons[i].Eta)            
             if i<4:
                 h_reco[13]['pT'][i].Fill(muons[i].PT)
-                h_reco[13]['p'][i].Fill(muons[i].P)
+                h_reco[13]['p'][i].Fill(muons[i].P4().P())
                 h_reco[13]['eta'][i].Fill(muons[i].Eta)
 
         h_reco[22]['mult'].Fill(len(photons))
         for i in range(len(photons)):
             P4_f+=photons[i].P4()
             h_reco[22]['pT']['I'].Fill(photons[i].PT)
-            h_reco[22]['p']['I'].Fill(photons[i].PT)
-            h_reco[22]['eta']['I'].Fill(photons[i].PT)
+            h_reco[22]['p']['I'].Fill(photons[i].P4().P())
+            h_reco[22]['eta']['I'].Fill(photons[i].Eta)
             if i<4:
                 h_reco[22]['pT'][i].Fill(photons[i].PT)
-                h_reco[22]['p'][i].Fill(photons[i].P)
+                h_reco[22]['p'][i].Fill(photons[i].P4().P())
                 h_reco[22]['eta'][i].Fill(photons[i].Eta)
 
         h_reco[11]['mult'].Fill(len(jets))
         for i in range(len(jets)):
             P4_f+=jets[i].P4()
             h_reco[21]['pT']['I'].Fill(jets[i].PT)
-            h_reco[21]['p']['I'].Fill(jets[i].PT)
-            h_reco[21]['eta']['I'].Fill(jets[i].PT)
+            h_reco[21]['p']['I'].Fill(jets[i].P4().P())
+            h_reco[21]['eta']['I'].Fill(jets[i].Eta)
             if i<4:
                 h_reco[21]['pT'][i].Fill(jets[i].PT)
-                h_reco[21]['p'][i].Fill(jets[i].P)
+                h_reco[21]['p'][i].Fill(jets[i].P4().P())
                 h_reco[21]['eta'][i].Fill(jets[i].Eta)
         
         R_missingMass.Fill((P4_f-P4_i).M())
@@ -278,6 +284,7 @@ if __name__=='__main__':
         minimum=9E9
         theZ=None
         for i1 in range(len(Zs.keys())):
+            Zcand=Zs[i1]={}
             for i2 in range(len(Zs[i1].keys())):
                 Zcand=Zs[i1][i2]
                 if Zcand:

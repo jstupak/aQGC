@@ -3,7 +3,7 @@
 if [[ $# < 1 ]];
 then
     echo "Usage: ./generateEvents.sh [-m madgraphScript] [-d delphesCard] [-a analysisScript]"
-    echo "Example: ./generateEvents.sh -m $PWD/foo -d $PWD/delphes/cards/gen_card.tcl"
+    echo "Example: ./generateEvents.sh -m $PWD/test.mg -d $PWD/delphes/cardsdelphes_card_MuonColliderDet.tcl"
     exit
 else
     while getopts m:d:a: flag; do
@@ -38,7 +38,7 @@ for gz in $gzs; do
     n=`grep -c \<event\> $lhe`
     echo $n
     sed s%examples/Pythia8/events.lhe%$lhe% $delphesDir/examples/Pythia8/configLHE.cmnd > configLHE.cmnd #this will create a new config pointing to your lhe
-    sed "s%Main:numberOfEvents = 10%Main:numberOfEvents = $n%" --in-place configLHE.cmnd
+    sed -in-place "s%Main:numberOfEvents = 10%Main:numberOfEvents = $n%" configLHE.cmnd
     $delphesDir/DelphesPythia8 $delphesCard configLHE.cmnd $output  #this runs delphes using your new config
     python $analysisScript $output
 done
