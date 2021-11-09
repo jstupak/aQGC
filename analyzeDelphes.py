@@ -122,7 +122,6 @@ if __name__=='__main__':
             h_reco[p]['pT'][i]=TH1F('R_%s_Pt_%s'%(particle[p],i),';%s pT [GeV];Events'%particle[p], 200, 0, bin_range)
             h_reco[p]['p'][i]=TH1F('R_%s_P_%s'%(particle[p],i),';%s pT [GeV];Events'%particle[p], 200, 0, bin_range)
             h_reco[p]['eta'][i]=TH1F('R_%s_eta_%s'%(particle[p],i),';%s pT [GeV];Events'%particle[p], 20, -4, 4)
-        h_reco[p]['mult']=TH1F('R_%s_mult'%particle[p],';%s multiplicity;Events'%particle[p], 7, -0.5, 6.5)
 
     #histograms for OS pairs
     R_ee_pT = TH1F('ee_pT', ';pT [GeV];Events', 200, 0, bin_range)
