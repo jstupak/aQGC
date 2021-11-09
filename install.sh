@@ -58,7 +58,7 @@ if [[ $? -ne 0 ]]; then
 else
     export delphesDir=$aQGCWorkDir/delphes
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${delphesDir}
-    export export ROOT_INCLUDE_PATH=ROOT_INCLUDE_PATH:${delphesDir}/external/
+    export ROOT_INCLUDE_PATH=ROOT_INCLUDE_PATH:${delphesDir}/external/
     cd ..
 fi
 
