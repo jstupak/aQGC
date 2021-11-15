@@ -171,8 +171,8 @@ if __name__=='__main__':
 
         truthElectrons=selector(event.Particle,'x.Status==1 and abs(x.PID)==11')
         truthMuons    =selector(event.Particle,'x.Status==1 and abs(x.PID)==13')
-        truthWs       =selector(event.Particle,'x.Status==22 and abs(x.PID)==24')
-        truthZs       =selector(event.Particle,'x.Status==22 and abs(x.PID)==23')
+        truthWs       =selector(event.Particle,'abs(x.Status)==22 and abs(x.PID)==24')
+        truthZs       =selector(event.Particle,'abs(x.Status)==22 and abs(x.PID)==23')
         truthPhotons  =selector(event.Particle,'x.Status==1 and abs(x.PID)==22')
         truthNeutrinos=selector(event.Particle,'x.Status==1 and (abs(x.PID)==12 or abs(x.PID)==14 or abs(x.PID)==16)')
 
