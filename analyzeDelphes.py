@@ -163,9 +163,9 @@ if __name__=='__main__':
     Test_beamRemnants_pT = TH1F('Test_beamRemnants_Pt', ';pT [GeV];Events', 30, 0, 3)
 
     #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-    m=0
+ 
     for event in f.Delphes:
-        m+=1
+       
         #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         #truth level
         #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -187,11 +187,7 @@ if __name__=='__main__':
         h_truth[22]['mult'].Fill(len(truthPhotons))
 	h_truth[12]['mult'].Fill(len(truthNeutrinos))
         T_beamRemnants_multiplicity.Fill(len(beamRemnantMuons))
-        
-	if (m<100):
-	    print m
-	    for i in range(len(truthWs)):
-	        print truthWs[i].PT
+  
         for i in range(len(truthElectrons)):
             h_truth[11]['pT'].Fill(truthElectrons[i].PT)
             h_truth[11]['p'].Fill(truthElectrons[i].P4().P())
