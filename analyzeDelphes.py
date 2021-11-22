@@ -209,9 +209,9 @@ if __name__=='__main__':
             h_truth[23]['eta'].Fill(truthZs[i].Eta)
 
         for i in range(len(truthPhotons)):
-            h_truth[21]['pT'].Fill(truthPhotons[i].PT)
-            h_truth[21]['p'].Fill(truthPhotons[i].P4().P())
-            h_truth[21]['eta'].Fill(truthPhotons[i].Eta)
+            h_truth[22]['pT'].Fill(truthPhotons[i].PT)
+            h_truth[22]['p'].Fill(truthPhotons[i].P4().P())
+            h_truth[22]['eta'].Fill(truthPhotons[i].Eta)
 
         for i in range(len(truthNeutrinos)):
             h_truth[12]['pT'].Fill(truthNeutrinos[i].PT)
