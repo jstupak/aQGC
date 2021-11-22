@@ -6,8 +6,8 @@ jetType='KTjet'
 particle={
     11:"e",
     13:"mu",
-    21:"gamma", #using this for all jets
-    22:"j",
+    21:"j", #using this for all jets
+    22:"gamma",
     23:"z",
     24:"w",
     12:"nu"
