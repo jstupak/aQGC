@@ -6,10 +6,11 @@ jetType='KTjet'
 particle={
     11:"e",
     13:"mu",
-    21:"gamma", #using this for all jets
-    22:"j",
+    21:"j", #using this for all jets
+    22:"gamma",
     23:"z",
-    24:"w"
+    24:"w",
+    12:"nu"
 }
 
 #OBJECT SELECTION
@@ -105,7 +106,7 @@ if __name__=='__main__':
 
     #declares truth-level pT, p, eta, and multiplicity histograms for e,mu,W,Z,gamma
     h_truth={}
-    for p in [11,13,21,22,23,24]:
+    for p in [11,13,21,22,23,24,12]:
         h_truth[p]={}
         h_truth[p]['pT'] =TH1F('T_%s_pT'%particle[p],';Truth %s pT [GeV];Events'%particle[p], 200, 0, bin_range)
         h_truth[p]['p']  =TH1F('T_%s_p'%particle[p],';Truth %s p [GeV];Events'%particle[p], 200, 0, bin_range)
@@ -162,9 +163,9 @@ if __name__=='__main__':
     Test_beamRemnants_pT = TH1F('Test_beamRemnants_Pt', ';pT [GeV];Events', 30, 0, 3)
 
     #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-    
+ 
     for event in f.Delphes:
-
+       
         #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         #truth level
         #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -172,8 +173,8 @@ if __name__=='__main__':
         truthElectrons=selector(event.Particle,'x.Status==1 and abs(x.PID)==11')
         truthMuons    =selector(event.Particle,'x.Status==1 and abs(x.PID)==13')
         truthWs       =selector(event.Particle,'abs(x.Status)==22 and abs(x.PID)==24')
-        truthZs       =selector(event.Particle,'abs(x.Status)==22 and abs(x.PID)==23')
-        truthPhotons  =selector(event.Particle,'x.Status==1 and abs(x.PID)==22')
+        truthZs       =selector(event.Particle,'abs(x.Status) in range(21, 30)  and abs(x.PID)==23')
+        truthPhotons  =selector(event.Particle,'abs(x.Status)==1 and abs(x.PID)==22')
         truthNeutrinos=selector(event.Particle,'x.Status==1 and (abs(x.PID)==12 or abs(x.PID)==14 or abs(x.PID)==16)')
 
         beamRemnantMuons   =selector(truthMuons,'isBeamRemnant(x)')
@@ -184,37 +185,38 @@ if __name__=='__main__':
         h_truth[24]['mult'].Fill(len(truthWs))
         h_truth[23]['mult'].Fill(len(truthZs))
         h_truth[22]['mult'].Fill(len(truthPhotons))
+	h_truth[12]['mult'].Fill(len(truthNeutrinos))
         T_beamRemnants_multiplicity.Fill(len(beamRemnantMuons))
-
+  
         for i in range(len(truthElectrons)):
             h_truth[11]['pT'].Fill(truthElectrons[i].PT)
             h_truth[11]['p'].Fill(truthElectrons[i].P4().P())
             h_truth[11]['eta'].Fill(truthElectrons[i].Eta)
 
         for i in range(len(truthMuons)):
-            h_truth[11]['pT'].Fill(truthMuons[i].PT)
-            h_truth[11]['p'].Fill(truthMuons[i].P4().P())
-            h_truth[11]['eta'].Fill(truthMuons[i].Eta)
+            h_truth[13]['pT'].Fill(truthMuons[i].PT)
+            h_truth[13]['p'].Fill(truthMuons[i].P4().P())
+            h_truth[13]['eta'].Fill(truthMuons[i].Eta)
 
         for i in range(len(truthWs)):
-            h_truth[11]['pT'].Fill(truthWs[i].PT)
-            h_truth[11]['p'].Fill(truthWs[i].P4().P())
-            h_truth[11]['eta'].Fill(truthWs[i].Eta)
-
+            h_truth[24]['pT'].Fill(truthWs[i].PT)
+            h_truth[24]['p'].Fill(truthWs[i].P4().P())
+            h_truth[24]['eta'].Fill(truthWs[i].Eta)
+        
         for i in range(len(truthZs)):
-            h_truth[11]['pT'].Fill(truthZs[i].PT)
-            h_truth[11]['p'].Fill(truthZs[i].P4().P())
-            h_truth[11]['eta'].Fill(truthZs[i].Eta)
+            h_truth[23]['pT'].Fill(truthZs[i].PT)
+            h_truth[23]['p'].Fill(truthZs[i].P4().P())
+            h_truth[23]['eta'].Fill(truthZs[i].Eta)
 
         for i in range(len(truthPhotons)):
-            h_truth[11]['pT'].Fill(truthPhotons[i].PT)
-            h_truth[11]['p'].Fill(truthPhotons[i].P4().P())
-            h_truth[11]['eta'].Fill(truthPhotons[i].Eta)
+            h_truth[22]['pT'].Fill(truthPhotons[i].PT)
+            h_truth[22]['p'].Fill(truthPhotons[i].P4().P())
+            h_truth[22]['eta'].Fill(truthPhotons[i].Eta)
 
         for i in range(len(truthNeutrinos)):
-            h_truth[11]['pT'].Fill(truthNeutrinos[i].PT)
-            h_truth[11]['p'].Fill(truthNeutrinos[i].P4().P())
-            h_truth[11]['eta'].Fill(truthNeutrinos[i].Eta)
+            h_truth[12]['pT'].Fill(truthNeutrinos[i].PT)
+            h_truth[12]['p'].Fill(truthNeutrinos[i].P4().P())
+            h_truth[12]['eta'].Fill(truthNeutrinos[i].Eta)
 
         for i in range(len(beamRemnantMuons)):
             T_beamRemnants_pT.Fill(beamRemnantMuons[i].PT)
