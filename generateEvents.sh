@@ -1,44 +1,44 @@
 #!/bin/bash -x
 
-if [[ `basename $PWD` != "MCProd" ]]; then echo "Execute from MCProd dir"; exit; fi
-if [[ $# < 1 ]]; 
-then 
-    echo "Usage: ./generateEvents.sh <mg script> [delphes card]"
-    echo "Example: ./generateEvents.sh $PWD/foo $PWD/delphes/cards/gen_card.tcl"
+if [[ $# < 1 ]];
+then
+    echo "Usage: ./generateEvents.sh [-m madgraphScript] [-d delphesCard] [-a analysisScript]"
+    echo "Example: ./generateEvents.sh -m $PWD/test.mg -d $PWD/delphes/cardsdelphes_card_MuonColliderDet.tcl"
     exit
 else
-    mgScript=$1
-    if [[ $# -gt 1 ]]; then
-	delphesCard=$2
-    else
-	delphesCard="cards/gen_card.tcl"
-    fi
+    while getopts m:d:a: flag; do
+	echo "flag -$flag, Argument $OPTARG";
+	case "$flag" in
+	    m) mgScript=$OPTARG;;
+	    d) delphesCard=$OPTARG;;
+	    a) analysisScript=$OPTARG;;
+	esac
+    done
 fi
 
-source setup.sh
+#restore environment
+. ~/.aQGCEnv
 
-touch dummy
+touch $aQGCWorkDir/.dummy
 
 #########################################################################
 
-cd MG5_aMC_v3_1_1
-python ./bin/mg5_aMC < "${mgScript}"
-gzs=`find . -newer ../dummy -name "unweighted_events.lhe.gz" -exec echo $PWD/{} \;`
-echo $gzs
+python $madgraphDir/bin/mg5_aMC < $mgScript
 
-cd ..
+gzs=`find . -newer $aQGCWorkDir/.dummy -name "unweighted_events.lhe.gz" -exec echo {} \;`
+echo $gzs
 
 #------------------------------------------------------------------------
 
-cd delphes
 for gz in $gzs; do 
     lhe=${gz%%.gz}
     output=${lhe%%.lhe}.root  #set delphes output path/name
-
+  
     gunzip $gz
     n=`grep -c \<event\> $lhe`
     echo $n
-    sed s%examples/Pythia8/events.lhe%$lhe% examples/Pythia8/configLHE.cmnd > configLHE.cmnd #this will create a new config pointing to your lhe
-    sed "s%Main:numberOfEvents = 10%Main:numberOfEvents = $n%" --in-place configLHE.cmnd
-    ./DelphesPythia8 $delphesCard configLHE.cmnd $output  #this runs delphes using your new config
+    sed s%examples/Pythia8/events.lhe%$lhe% $delphesDir/examples/Pythia8/configLHE.cmnd > configLHE.cmnd #this will create a new config pointing to your lhe
+    sed -in-place "s%Main:numberOfEvents = 10%Main:numberOfEvents = $n%" configLHE.cmnd
+    $delphesDir/DelphesPythia8 $delphesCard configLHE.cmnd $output  #this runs delphes using your new config
+    python $analysisScript $output
 done
