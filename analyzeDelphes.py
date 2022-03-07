@@ -1,13 +1,13 @@
 maxEvents=9E9
 DEBUG=False
 
-jetType='KTjet'
+jetType='VLCjetR15N2'
 
 particle={
     11:"e",
     13:"mu",
-    21:"gamma", #using this for all jets
-    22:"j",
+    22:"gamma", #using this for all jets
+    21:"j",
     23:"z",
     24:"w",
     12:"nu"
@@ -38,6 +38,8 @@ import operator
 from sys import argv
 #---------------------------------------------------------
 from ROOT import *
+TH1.SetDefaultSumw2()
+import math
 
 gSystem.Load("libDelphes")
 gStyle.SetOptStat(0)
@@ -80,6 +82,9 @@ def isBeamRemnant(p):
     return parents.Status==4
 
 #---------------------------------------------------------
+def sortFunc(x):
+    return (x.PT)*math.cosh(x.Eta)
+#---------------------------------------------------------
 
 if __name__=='__main__':
     
@@ -102,18 +107,21 @@ if __name__=='__main__':
     sqrtS+=t.Particle[0].E
     sqrtS+=t.Particle[1].E
     #sets upper limit for bin range
-    bin_range = sqrtS/10
+    bin_range = sqrtS/2
 
     #declares truth-level pT, p, eta, and multiplicity histograms for e,mu,W,Z,gamma
     h_truth={}
     for p in [11,13,21,22,23,24,12]:
         h_truth[p]={}
-        h_truth[p]['pT'] =TH1F('T_%s_pT'%particle[p],';Truth %s pT [GeV];Events'%particle[p], 200, 0, bin_range)
-        h_truth[p]['p']  =TH1F('T_%s_p'%particle[p],';Truth %s p [GeV];Events'%particle[p], 200, 0, bin_range)
+        h_truth[p]['pT'] =TH1F('T_%s_pT'%particle[p],';Truth %s pT [GeV];Events'%particle[p], 10, 0, bin_range)
+        h_truth[p]['p']  =TH1F('T_%s_p'%particle[p],';Truth %s p [GeV];Events'%particle[p], 10, 0, bin_range)
         h_truth[p]['eta']=TH1F('T_%s_eta'%particle[p],';Truth %s #eta;Events'%particle[p], 20, -4, 4)
         h_truth[p]['mult']=TH1F('T_%s_mult'%particle[p],';Truth %s multiplicity;Events'%particle[p], 7, -0.5, 6.5)
 
-
+    #invariant mass of WW pair histogram
+    T_WW_mass = TH1F('WW_mass', ';Mass [GeV];Events', 200, 0, sqrtS)
+    #Eta vs m(WW) 2-D histogram
+    T_eta_vs_WWmass = TH2F('T_eta_vs_WWmass', ';Beam Remnant Eta; WW mass [GeV]', 10, 0, 10, 10, 500, sqrtS)
     #missing energy histograms
     T_missingEt = TH1F('T_missingEt', ';Missing Transverse Energy [GeV];Events', 200, 0, bin_range)
     T_missingE = TH1F('T_missingE', ';Missing Energy [GeV];Events', 200, 0, bin_range)
@@ -124,13 +132,17 @@ if __name__=='__main__':
         h_reco[p]['pT']={}
         h_reco[p]['p']={}
         h_reco[p]['eta']={}
-
+        h_reco[p]['mass']={}
         h_reco[p]['mult']=TH1F('R_%s_mult'%particle[p],';%s multiplicity;Events'%particle[p], 7, -0.5, 6.5)
         for i in ['I']+range(4):
             h_reco[p]['pT'][i]=TH1F('R_%s_Pt_%s'%(particle[p],i),';%s pT [GeV];Events'%particle[p], 200, 0, bin_range)
-            h_reco[p]['p'][i]=TH1F('R_%s_P_%s'%(particle[p],i),';%s pT [GeV];Events'%particle[p], 200, 0, bin_range)
-            h_reco[p]['eta'][i]=TH1F('R_%s_eta_%s'%(particle[p],i),';%s pT [GeV];Events'%particle[p], 20, -4, 4)
-
+            h_reco[p]['p'][i]=TH1F('R_%s_P_%s'%(particle[p],i),';%s P [GeV];Events'%particle[p], 20, 0, bin_range)
+            h_reco[p]['eta'][i]=TH1F('R_%s_eta_%s'%(particle[p],i),';%s  #eta;Events'%particle[p], 20, -4, 4)
+            if (p == 21):
+                h_reco[p]['mass'][i]=TH1F('R_%s_mass_%s'%(particle[p],i),';%s mass [GeV];Events'%particle[p], 20, 0, bin_range/2)
+    
+    R_reco_muon_leading_cos = TH1F('R_muon_leading_cos', ';cos(theta);Events', 10, -1, 1) 
+    R_reco_muon_sub_cos = TH1F('R_muon_sub_cos', ';cos(theta);Events', 10, -1, 1) 
     #histograms for OS pairs
     R_ee_pT = TH1F('ee_pT', ';pT [GeV];Events', 200, 0, bin_range)
     R_ee_eta = TH1F('ee_Eta', ';Eta;Events', 20, -4, 4)
@@ -140,9 +152,11 @@ if __name__=='__main__':
 
     R_mumu_pT = TH1F('mumu_pT', ';pT [GeV];Events', 200, 0, bin_range)
     R_mumu_eta = TH1F('mumu_Eta', ';Eta;Events', 20, -4, 4)
-    R_mumu_mass = TH1F('mumu_mass', ';Mass [GeV];Events', 200, 0, 200)
+    R_mumu_mass = TH1F('mumu_mass', ';Mass [GeV];Events', 20, 0, sqrtS)
     R_mumu_deltaEta = TH1F('mumu_Delta Eta', ';Delta Eta;Events', 20, -4, 4)
     R_mumu_multiplicity = TH1F('mumu_multiplicity', ';Multiplicity;Events', 5, -.5, 4.5)
+    R_mumu_p = TH1F('mumu_P', ';P [GeV];Events', 20, 0, sqrtS)
+    R_mumu_cos = TH1F('mumu_cos', ';cos(theta);Events', 10, -1, 1)
 
     R_emu_pT = TH1F('emu_pT', ';pT [GeV];Events', 200, 0, bin_range)
     R_emu_eta = TH1F('emu_Eta', ';Eta;Events', 20, -4, 4)
@@ -154,18 +168,56 @@ if __name__=='__main__':
     R_missingET = TH1F('R_MissingET', ';Missing Transverse Energy [GeV];Events', 200, 0, bin_range)
     R_missingE = TH1F('R_MissingE', ';Missing Energy [GeV];Events', 200, 0, bin_range)
     R_missingMass = TH1F('R_MissingMass', ';Missing Mass [GeV];Events' , 200, 0, bin_range)
+    
+    #histograms for beam remnants
+    R_Wjets_pT = TH1F('R_Wjets_Pt', ';pT [GeV];Events', 20, 0, bin_range)
+    R_Wjets_p = TH1F('R_Wjets_p', ';p [GeV];Events', 200, 0, bin_range)
+    R_Wjets_eta = TH1F('R_Wjets_eta', ';Eta;Events', 40, -10, 10)
+    R_Wjets_multiplicity = TH1F('R_Wjets_multiplicity', ';Multiplicity;Events', 7, -.5, 6.5)
+    R_Wjets_mass = TH1F('R_Wjets_mass', ';mass [GeV];Events', 20, 0, sqrtS)
+    R_Wjets_p_leading = TH1F('R_Wjets_p_leading', ';p [GeV];Events', 20, 0, bin_range)
+    R_Wjets_p_sub = TH1F('R_Wjets_p_sub', ';p [GeV];Events', 20, 0, bin_range)
+    R_Wjets_cos_leading = TH1F('R_Wjets_cos_leading', ';cos(theta);Events', 10, -1, 1) 
+    R_Wjets_cos_sub = TH1F('R_Wjets_cos_sub', ';cos(theta);Events', 10, -1, 1)
+    R_WJets_p_pair = TH1F('R_Wjets_p_pairs', ';p [GeV];Events', 20, 0, sqrtS)
+    R_Wjets_cos_pair = TH1F('R_Wjets_cos_pairs', ';cos(theta);Events',10, -1, 1)
 
     #histograms for beam remnants
-    T_beamRemnants_pT = TH1F('T_beamRemnants_Pt', ';pT [GeV];Events', 200, 0, bin_range)
+    T_beamRemnants_pT = TH1F('T_beamRemnants_Pt', ';pT [GeV];Events', 20, 0, bin_range)
     T_beamRemnants_p = TH1F('T_beamRemnants_p', ';p [GeV];Events', 200, 0, bin_range)
-    T_beamRemnants_eta = TH1F('T_beamRemnants_eta', ';Eta;Events', 20, -10, 10)
+    T_beamRemnants_eta = TH1F('T_beamRemnants_eta', ';Eta;Events', 40, -10, 10)
     T_beamRemnants_multiplicity = TH1F('T_beamRemnants_multiplicity', ';Multiplicity;Events', 7, -.5, 6.5)
-    Test_beamRemnants_pT = TH1F('Test_beamRemnants_Pt', ';pT [GeV];Events', 30, 0, 3)
+    T_beamRemnants_cosh = TH1F('T_beamRemnants_cosh', ';Cosh(Eta)/pT;Events', 20, 0, math.cosh(10)/(10*bin_range))
+    T_beamRemnants_mass = TH1F('T_beamRemnants_mass', ';mass [GeV];Events', 300, 0, bin_range)
+   
+    #histograms for non-beam remnants
+    T_nonBeamRemnants_pT = TH1F('T_nonBeamRemnants_Pt', ';pT [GeV];Events', 20, 0, bin_range)
+    T_nonBeamRemnants_p = TH1F('T_nonBeamRemnants_p', ';p [GeV];Events', 200, 0, bin_range)
+    T_nonBeamRemnants_eta = TH1F('T_nonBeamRemnants_eta', ';Eta;Events', 40, -10, 10)
+    T_nonBeamRemnants_multiplicity = TH1F('T_nonBeamRemnants_multiplicity', ';Multiplicity;Events', 7, -.5, 6.5)
+    T_nonBeamRemnants_cosh = TH1F('T_nonBeamRemnants_cosh', ';Cosh(Eta)/pT;Events', 20, 0, math.cosh(10)/(10*bin_range))
 
-    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
- 
+    #histograms for reco beam remnants
+    R_beamRemnants_pT = TH1F('R_beamRemnants_Pt', ';pT [GeV];Events', 20, 100, bin_range)
+    R_beamRemnants_p = TH1F('R_beamRemnants_p', ';p [GeV];Events', 200, 100, bin_range)
+    R_beamRemnants_eta = TH1F('R_beamRemnants_eta', ';Eta;Events', 40, -2.5, 2.5)
+    R_beamRemnants_multiplicity = TH1F('R_beamRemnants_multiplicity', ';Multiplicity;Events', 7, -.5, 6.5)
+    R_beamRemnants_cosh = TH1F('R_beamRemnants_cosh', ';Cosh(Eta)/pT;Events', 20, 0, math.cosh(10)/(10*bin_range))
+    R_beamRemnants_mass = TH1F('R_beamRemnants_mass', ';mass [GeV];Events', 600, 0, sqrtS)
+
+    #histograms for reco non-beam remnants
+    R_nonBeamRemnants_pT = TH1F('R_nonBeamRemnants_Pt', ';pT [GeV];Events', 20, 0, 100)
+    R_nonBeamRemnants_p = TH1F('R_nonBeamRemnants_p', ';p [GeV];Events', 200, 0, 100)
+    R_nonBeamRemnants_eta = TH1F('R_nonBeamRemnants_eta', ';Eta;Events', 40, -2.5, 2.5)
+    R_nonBeamRemnants_multiplicity = TH1F('R_nonBeamRemnants_multiplicity', ';Multiplicity;Events', 7, -.5, 6.5)
+    R_nonBeamRemnants_cosh = TH1F('R_nonBeamRemnants_cosh', ';Cosh(Eta)/pT;Events', 20, 0, math.cosh(10)/(10*bin_range))
+    
+    CutFlow = TH1F('CutFlow', ';Cut;Events', 5, .5, 5.5)
+
+   #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    m=0 
     for event in f.Delphes:
-       
+        m+=1       
         #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         #truth level
         #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -179,7 +231,54 @@ if __name__=='__main__':
 
         beamRemnantMuons   =selector(truthMuons,'isBeamRemnant(x)')
         nonBeamRemnantMuons=selector(truthMuons,'not isBeamRemnant(x)')
+       	truthLeptons=truthElectrons + truthMuons
 
+        electrons=selector(event.Electron,                 'x.PT>%f and abs(x.Eta)<%f'%(pTMin[11],etaMax[11]))
+        muons    =selector(event.Muon,                     'x.PT>%f and abs(x.Eta)<%f'%(pTMin[13],etaMax[13]))
+        photons  =selector(event.Photon,                   'x.PT>%f and abs(x.Eta)<%f'%(pTMin[22],etaMax[22]))
+        jets     =selector(event.__getattr__(jetType),     'x.PT>%f and abs(x.Eta)<%f'%(pTMin[21],etaMax[21]))
+        leptons = electrons + muons
+        
+        # requires either one or two BRM and W-jets
+        reco_beamRemnants=[]
+        reco_nonBeamRemnants=[]
+        W_jets=[]
+        for i in range(len(muons)):
+            if (muons[i].P4().P() >= 100):
+                reco_beamRemnants.append(muons[i])
+        for i in range(len(jets)):
+            if (50 <= jets[i].P4().M() <= 100):
+                W_jets.append(jets[i])
+
+        # sort object lists
+        for collection in [electrons, muons, photons, jets, W_jets, reco_beamRemnants]: collection.sort(key=sortFunc, reverse=True)
+    
+        # increments cutFlow histogram
+        # for zmass or zmass-veto channels
+        if len(muons)>=2:
+            muon_4vec=muons[0].P4() + muons[1].P4()
+        CutFlow.Fill(1)
+        if (len(muons) == 2) and (abs(muon_4vec.M()-91)<15):
+            CutFlow.Fill(2)
+            if len(jets) == 2:
+                CutFlow.Fill(3)
+                if len(W_jets) >= 1:
+                    CutFlow.Fill(4)
+                    if len(W_jets) == 2:
+                        CutFlow.Fill(5)
+
+        if len(muons) != 2:
+            continue
+        if len(W_jets) != 2: 
+            continue
+        # zmass veto channel
+        #if (muon_4vec.M()-91)<15:
+        #    continue
+        # zmass channel
+        if abs(muon_4vec.M()-91)>15:
+            continue
+        R_mumu_mass.Fill(muon_4vec.M())
+        
         h_truth[11]['mult'].Fill(len(truthElectrons))
         h_truth[13]['mult'].Fill(len(truthMuons))
         h_truth[24]['mult'].Fill(len(truthWs))
@@ -187,12 +286,20 @@ if __name__=='__main__':
         h_truth[22]['mult'].Fill(len(truthPhotons))
 	h_truth[12]['mult'].Fill(len(truthNeutrinos))
         T_beamRemnants_multiplicity.Fill(len(beamRemnantMuons))
-  
+	T_nonBeamRemnants_multiplicity.Fill(len(nonBeamRemnantMuons))
+	
+	if (len(truthWs) >= 2):
+	    WW_4vec=truthWs[0].P4() + truthWs[1].P4()
+	    T_WW_mass.Fill(WW_4vec.M())
+        if (len(beamRemnantMuons) >= 2) and (len(truthWs) >= 2):
+            T_eta_vs_WWmass.Fill(abs(beamRemnantMuons[0].Eta), WW_4vec.M())
+            T_eta_vs_WWmass.Fill(abs(beamRemnantMuons[1].Eta), WW_4vec.M())
+   
         for i in range(len(truthElectrons)):
             h_truth[11]['pT'].Fill(truthElectrons[i].PT)
             h_truth[11]['p'].Fill(truthElectrons[i].P4().P())
             h_truth[11]['eta'].Fill(truthElectrons[i].Eta)
-
+        
         for i in range(len(truthMuons)):
             h_truth[13]['pT'].Fill(truthMuons[i].PT)
             h_truth[13]['p'].Fill(truthMuons[i].P4().P())
@@ -209,20 +316,30 @@ if __name__=='__main__':
             h_truth[23]['eta'].Fill(truthZs[i].Eta)
 
         for i in range(len(truthPhotons)):
-            h_truth[21]['pT'].Fill(truthPhotons[i].PT)
-            h_truth[21]['p'].Fill(truthPhotons[i].P4().P())
-            h_truth[21]['eta'].Fill(truthPhotons[i].Eta)
+            h_truth[22]['pT'].Fill(truthPhotons[i].PT)
+            h_truth[22]['p'].Fill(truthPhotons[i].P4().P())
+            h_truth[22]['eta'].Fill(truthPhotons[i].Eta)
 
         for i in range(len(truthNeutrinos)):
             h_truth[12]['pT'].Fill(truthNeutrinos[i].PT)
             h_truth[12]['p'].Fill(truthNeutrinos[i].P4().P())
             h_truth[12]['eta'].Fill(truthNeutrinos[i].Eta)
 
+        if len(beamRemnantMuons)>=2:
+            T_BRM_4vec=beamRemnantMuons[0].P4()+beamRemnantMuons[1].P4()
+            T_beamRemnants_mass.Fill(T_BRM_4vec.M())    
         for i in range(len(beamRemnantMuons)):
             T_beamRemnants_pT.Fill(beamRemnantMuons[i].PT)
             T_beamRemnants_p.Fill(beamRemnantMuons[i].P4().P())
             T_beamRemnants_eta.Fill(beamRemnantMuons[i].Eta)
-
+            T_beamRemnants_cosh.Fill(math.cosh(beamRemnantMuons[i].Eta)/beamRemnantMuons[i].PT)
+       
+        for i in range(len(nonBeamRemnantMuons)):
+            T_nonBeamRemnants_pT.Fill(nonBeamRemnantMuons[i].PT)
+            T_nonBeamRemnants_p.Fill(nonBeamRemnantMuons[i].P4().P())
+            T_nonBeamRemnants_eta.Fill(nonBeamRemnantMuons[i].Eta)
+            T_nonBeamRemnants_cosh.Fill(math.cosh(nonBeamRemnantMuons[i].Eta)/nonBeamRemnantMuons[i].PT)
+       
         truthMissingP=TLorentzVector()
         for nu in truthNeutrinos:
             truthMissingP+=nu.P4()
@@ -244,19 +361,11 @@ if __name__=='__main__':
         
         P4_f = TLorentzVector()
 
-        electrons=selector(event.Electron,                 'x.PT>%f and abs(x.Eta)<%f'%(pTMin[11],etaMax[11]))
-        muons    =selector(event.Muon,                     'x.PT>%f and abs(x.Eta)<%f'%(pTMin[13],etaMax[13]))
-        photons  =selector(event.Photon,                   'x.PT>%f and abs(x.Eta)<%f'%(pTMin[22],etaMax[22]))
-        jets     =selector(event.__getattr__(jetType),     'x.PT>%f and abs(x.Eta)<%f'%(pTMin[21],etaMax[21]))
-
         #electrons=selector(event.Electron,'x.PT>5 and abs(x.Eta)<2')
         #muons=selector(event.Muon,'x.PT>5 and abs(x.Eta)<2')
 
         #fMuons=selector(event.Muon,'abs(x.Eta)>2')
         #fMuons+=selector(event.Electron,'abs(x.Eta)>2 and x.Particle.GetObject().PID==11 and x.Particle.GetObject().Status==1 and x.Particle.GetObject().M1<5')  #this is a hack - not a typo
-       
-        #sort object lists
-        for collection in [electrons, muons, photons, jets]: collection.sort(key=operator.attrgetter('PT'),reverse=True)
 
         h_reco[11]['mult'].Fill(len(electrons))
         for i in range(len(electrons)):
@@ -264,13 +373,19 @@ if __name__=='__main__':
             h_reco[11]['pT']['I'].Fill(electrons[i].PT)
             h_reco[11]['p']['I'].Fill(electrons[i].P4().P())
             h_reco[11]['eta']['I'].Fill(electrons[i].Eta)
-
             if i<4:
                 h_reco[11]['pT'][i].Fill(electrons[i].PT)
                 h_reco[11]['p'][i].Fill(electrons[i].P4().P())
                 h_reco[11]['eta'][i].Fill(electrons[i].Eta)
 
-        h_reco[13]['mult'].Fill(len(muons))
+        h_reco[13]['mult'].Fill(len(muons))  
+        if len(muons)>=2:
+            R_muon_leading_cos.Fill(muons[0].P4().CosTheta())
+            R_muon_sub_cos.Fill(muons[1].P4().CosTheta())
+        if len(muons)==1:
+            R_muon_leading_cos.Fill(muons[0].P4().CosTheta())
+        R_mumu_p.Fill(muon_4vec.P())
+        R_mumu_cos.Fill(muon_4vec.CosTheta())   
         for i in range(len(muons)):
             P4_f+=muons[i].P4()
             h_reco[13]['pT']['I'].Fill(muons[i].PT)
@@ -280,6 +395,27 @@ if __name__=='__main__':
                 h_reco[13]['pT'][i].Fill(muons[i].PT)
                 h_reco[13]['p'][i].Fill(muons[i].P4().P())
                 h_reco[13]['eta'][i].Fill(muons[i].Eta)
+
+        R_beamRemnants_multiplicity.Fill(len(reco_beamRemnants))
+        if len(reco_beamRemnants)>=2:
+            BRM_4vec=reco_beamRemnants[0].P4() + reco_beamRemnants[1].P4()
+            R_beamRemnants_mass.Fill(BRM_4vec.M())
+        for i in range(len(reco_beamRemnants)):
+            R_beamRemnants_pT.Fill(reco_beamRemnants[i].PT)
+            R_beamRemnants_p.Fill(reco_beamRemnants[i].P4().P())
+            R_beamRemnants_eta.Fill(reco_beamRemnants[i].Eta)
+            R_beamRemnants_cosh.Fill(math.cosh(reco_beamRemnants[i].Eta)/reco_beamRemnants[i].PT)
+
+        for i in range(len(leptons)):
+            if ((abs(leptons[i].Eta) <= 2) and (leptons[i].P4().P() < 100)):
+                reco_nonBeamRemnants.append(leptons[i])
+        
+        R_nonBeamRemnants_multiplicity.Fill(len(reco_nonBeamRemnants))
+        for i in range(len(reco_nonBeamRemnants)):
+            R_nonBeamRemnants_pT.Fill(reco_nonBeamRemnants[i].PT)
+            R_nonBeamRemnants_p.Fill(reco_nonBeamRemnants[i].P4().P())
+            R_nonBeamRemnants_eta.Fill(reco_nonBeamRemnants[i].Eta)
+            R_nonBeamRemnants_cosh.Fill(math.cosh(reco_nonBeamRemnants[i].Eta)/reco_nonBeamRemnants[i].PT)      
 
         h_reco[22]['mult'].Fill(len(photons))
         for i in range(len(photons)):
@@ -292,17 +428,37 @@ if __name__=='__main__':
                 h_reco[22]['p'][i].Fill(photons[i].P4().P())
                 h_reco[22]['eta'][i].Fill(photons[i].Eta)
 
-        h_reco[11]['mult'].Fill(len(jets))
+        h_reco[21]['mult'].Fill(len(jets))
         for i in range(len(jets)):
             P4_f+=jets[i].P4()
             h_reco[21]['pT']['I'].Fill(jets[i].PT)
             h_reco[21]['p']['I'].Fill(jets[i].P4().P())
             h_reco[21]['eta']['I'].Fill(jets[i].Eta)
+            h_reco[21]['mass']['I'].Fill(jets[i].P4().M())
             if i<4:
                 h_reco[21]['pT'][i].Fill(jets[i].PT)
                 h_reco[21]['p'][i].Fill(jets[i].P4().P())
                 h_reco[21]['eta'][i].Fill(jets[i].Eta)
+                h_reco[21]['mass'][i].Fill(jets[i].P4().M())
         
+        R_Wjets_multiplicity.Fill(len(W_jets))
+        if len(W_jets)>=2:
+            Wjets_4vec=W_jets[0].P4() + W_jets[1].P4()
+            R_Wjets_mass.Fill(Wjets_4vec.M())
+            R_Wjets_cos_leading.Fill(W_jets[0].P4().CosTheta())
+            R_Wjets_cos_sub.Fill(W_jets[1].P4().CosTheta())
+            R_Wjets_p_leading.Fill(W_jets[0].P4().P())
+            R_Wjets_p_sub.Fill(W_jets[1].P4().P())
+            R_Wjets_cos_pair.Fill(Wjets_4vec.P())
+            R_Wjets_p_pairs.Fill(Wjets_4vec.CosTheta())
+        if len(W_jets)==1:
+            R_Wjets_cos_leading.Fill(W_jets[0].P4().CosTheta())
+            R_Wjets_p_leading.Fill(W_jets[0].P4().CosTheta())
+        for i in range(len(W_jets)):
+            R_Wjets_pT.Fill(W_jets[i].PT)
+            R_Wjets_p.Fill(W_jets[i].P4().P())
+            R_Wjets_eta.Fill(W_jets[i].Eta)
+
         R_missingMass.Fill((P4_f-P4_i).M())
 
         #-------------------------------------------------------------------------------------------------
@@ -337,7 +493,7 @@ if __name__=='__main__':
                 R_ee_eta.Fill(theZ.Eta())
                 R_ee_deltaEta.Fill(abs(l1.Eta - l2.Eta))
             else:
-                R_mumu_mass.Fill(theZ.Mass())
+                #R_mumu_mass.Fill(theZ.Mass())
                 R_mumu_pT.Fill(theZ.Pt())
                 R_mumu_eta.Fill(theZ.Eta())
                 R_mumu_deltaEta.Fill(abs(l1.Eta - l2.Eta))
@@ -428,4 +584,11 @@ if __name__=='__main__':
         R_mumu_multiplicity.Fill(mumu)
         R_emu_multiplicity.Fill(emu)
         """
+    T_eta_vs_WWmass.ProfileY('Y_axis_profile')
+    
+    print CutFlow.GetBinContent(1)
+    print CutFlow.GetBinContent(2)
+    print CutFlow.GetBinContent(3)
+    print CutFlow.GetBinContent(4)
+    print CutFlow.GetBinContent(5)
     output.Write()
